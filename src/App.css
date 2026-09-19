@@ -70,3 +70,48 @@ tr.evidence:hover { background: #332626; }
                 border: 0; border-radius: 8px; color: #fff; font-weight: 600; cursor: pointer; font-size: 14px; }
 .hint { font-size: 12px; margin-top: 18px; }
 .error { color: var(--critical); font-size: 13px; }
+
+.tabs { display: flex; gap: 4px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+.tab { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted);
+       padding: 9px 16px; cursor: pointer; font-size: 13px; font-weight: 500; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.sim-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.sim-form input[type=text], .sim-form input:not([type]), .sim-form select {
+  padding: 9px 12px; background: #10151b; border: 1px solid var(--line);
+  border-radius: 8px; color: var(--text); font-size: 13px; min-width: 190px;
+}
+.sim-form button { padding: 9px 16px; background: var(--accent); border: 0; border-radius: 8px;
+                   color: #fff; font-weight: 600; cursor: pointer; font-size: 13px; }
+.sim-form button:disabled { opacity: 0.5; cursor: default; }
+.check { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 13px; }
+.check input { accent-color: var(--accent); }
+
+.scenarios { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+             gap: 10px; margin-top: 14px; }
+.scenario { text-align: left; background: #10151b; border: 1px solid var(--line);
+            border-radius: 10px; padding: 13px 15px; cursor: pointer; color: var(--text); }
+.scenario:hover { border-color: var(--accent); background: #141b23; }
+.scenario:disabled { opacity: 0.5; cursor: default; }
+.scenario strong { display: block; font-size: 13px; margin-bottom: 4px; }
+.scenario span { color: var(--muted); font-size: 12px; line-height: 1.4; }
+
+.pep { background: var(--critical); color: #fff; font-size: 10px; font-weight: 700;
+       padding: 2px 6px; border-radius: 4px; margin-left: 6px; letter-spacing: 0.4px; }
+.muted { color: var(--muted); }
+td .score { margin-right: 5px; font-size: 11px; }
+
+.chip { background: var(--accent); border: 0; color: #fff; font-size: 11px; font-weight: 600;
+        padding: 3px 9px; border-radius: 12px; cursor: pointer; margin-left: 4px; }
+.chip:hover { opacity: 0.85; }
+
+.link { background: none; border: 0; color: var(--accent); cursor: pointer;
+        font-size: 13px; padding: 12px 0 0; }
+.link:hover { text-decoration: underline; }
+
+.posted { background: #10151b; border-left: 3px solid var(--low); padding: 10px 14px;
+          border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 13px; }
+.posted.fired { border-left-color: var(--critical); }
+
+.add-account { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
