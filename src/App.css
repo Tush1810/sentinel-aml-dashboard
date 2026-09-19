@@ -1,0 +1,72 @@
+.app { max-width: 1280px; margin: 0 auto; padding: 24px 16px 64px; }
+
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+h1 { font-size: 20px; font-weight: 600; margin: 0; letter-spacing: -0.2px; }
+h1 span { color: var(--accent); }
+.who { color: var(--muted); font-size: 13px; display: flex; gap: 12px; align-items: center; }
+.who button, .close {
+  background: none; border: 1px solid var(--line); color: var(--muted);
+  padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;
+}
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.tile strong { display: block; font-size: 26px; font-weight: 600; }
+.tile span { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; }
+.tile.accent strong { color: var(--accent); }
+
+.panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 16px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.panel h2 { font-size: 14px; font-weight: 600; margin: 0 0 14px; display: flex; align-items: center; gap: 10px; }
+.panel h2 small, td small { color: var(--muted); font-weight: 400; font-size: 12px; }
+.panel h3 { font-size: 13px; color: var(--muted); margin: 20px 0 8px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+.heatmap { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.cell { border-radius: 8px; padding: 14px 10px; text-align: center; color: #0f1419; }
+.cell strong { display: block; font-size: 22px; font-weight: 700; }
+.cell span { font-size: 11px; font-weight: 600; letter-spacing: 0.4px; }
+.cell.critical { background: var(--critical); color: #fff; }
+.cell.high { background: var(--high); }
+.cell.medium { background: var(--medium); }
+.cell.low { background: var(--low); color: #fff; }
+
+.bar-row { display: grid; grid-template-columns: 160px 1fr 32px; gap: 10px; align-items: center; margin-bottom: 7px; }
+.bar-label { font-size: 12px; color: var(--muted); text-transform: capitalize; }
+.bar { background: #10151b; border-radius: 4px; height: 8px; overflow: hidden; }
+.bar div { background: var(--accent); height: 100%; }
+.bar-count { font-size: 12px; text-align: right; color: var(--muted); }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; color: var(--muted); font-weight: 500; font-size: 11px;
+     text-transform: uppercase; letter-spacing: 0.4px; padding: 8px; border-bottom: 1px solid var(--line); }
+td { padding: 9px 8px; border-bottom: 1px solid var(--line); }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: #1c232c; }
+tbody tr.active { background: #1f2a36; }
+tr.evidence { background: #2a1f1f; }
+tr.evidence:hover { background: #332626; }
+.credit { color: var(--low); }
+.debit { color: var(--high); }
+
+.score { display: inline-block; min-width: 34px; text-align: center; padding: 3px 7px;
+         border-radius: 6px; font-weight: 700; color: #0f1419; }
+.score.critical { background: var(--critical); color: #fff; }
+.score.high { background: var(--high); }
+.score.medium { background: var(--medium); }
+.score.low { background: var(--low); color: #fff; }
+
+.detail .explanation { background: #10151b; border-left: 3px solid var(--accent);
+                       padding: 12px 14px; border-radius: 0 8px 8px 0; margin: 0 0 14px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 13px; color: var(--muted); }
+.meta b { color: var(--text); font-weight: 500; margin-right: 6px; }
+.close { margin-left: auto; }
+.empty { color: var(--muted); text-align: center; padding: 24px; }
+
+.login { max-width: 300px; margin: 18vh auto; text-align: center; }
+.login p { color: var(--muted); margin-top: 4px; }
+.login input { width: 100%; padding: 10px 12px; margin-top: 10px; background: var(--panel);
+               border: 1px solid var(--line); border-radius: 8px; color: var(--text); font-size: 14px; }
+.login button { width: 100%; margin-top: 14px; padding: 10px; background: var(--accent);
+                border: 0; border-radius: 8px; color: #fff; font-weight: 600; cursor: pointer; font-size: 14px; }
+.hint { font-size: 12px; margin-top: 18px; }
+.error { color: var(--critical); font-size: 13px; }

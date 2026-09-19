@@ -1,0 +1,22 @@
+:root {
+  --bg: #0f1419;
+  --panel: #171d24;
+  --line: #262e38;
+  --text: #e4e8ed;
+  --muted: #8b97a6;
+  --accent: #4f9cf9;
+  --critical: #e5484d;
+  --high: #f2811d;
+  --medium: #e0b341;
+  --low: #3fa55f;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
