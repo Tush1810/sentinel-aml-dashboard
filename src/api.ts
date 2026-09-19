@@ -139,3 +139,21 @@ export const assignCase = (caseRef: string, assignee: string, c: Credentials) =>
 export const disposeCase = (
   caseRef: string, disposition: Disposition, reason: string, c: Credentials,
 ) => send<CaseView>(`/api/v1/cases/${caseRef}/disposition`, c, { disposition, reason })
+
+export type CreatedCustomer = {
+  customerRef: string
+  accountRef: string
+  name: string
+  politicallyExposed: boolean
+  kycStatus: string
+  riskRating: string
+}
+
+export const createCustomer = (
+  firstName: string, lastName: string,
+  politicallyExposed: boolean, kycVerified: boolean, c: Credentials,
+) => send<CreatedCustomer>('/api/v1/customers', c,
+  { firstName, lastName, politicallyExposed, kycVerified })
+
+export const addAccount = (customerRef: string, accountType: string, c: Credentials) =>
+  send<CreatedCustomer>(`/api/v1/customers/${customerRef}/accounts`, c, { accountType })

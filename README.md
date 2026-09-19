@@ -99,8 +99,8 @@ not here, so hiding a name in the browser is not what protects it.
 ## 8. Known limitations
 
 - Credentials are held in component state. A page reload asks for them again.
-- There is no way to create customers or accounts from the UI. Load them with the CSV
-  ingestion endpoints on `sentinel-aml-service`.
+- Creating a customer or an account needs the `admin` account. As `analyst` those controls
+  return 403. Bulk loading through the CSV ingestion endpoints stays the real path.
 - The alert queue fetches up to 100 alerts in one call and does not paginate.
 - Nothing polls. To see alerts the engine raised after you loaded the page, reload it.
 - There are no tests. `npm run build` type-checks the whole project, which is the only

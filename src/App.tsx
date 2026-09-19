@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
-  fetchAlert, fetchAlerts, fetchCustomers, fetchSummary, fetchTimeline,
-  openCase, postTransaction,
+  addAccount, createCustomer, fetchAlert, fetchAlerts, fetchCustomers, fetchSummary,
+  fetchTimeline, openCase, postTransaction,
   type Alert, type CasePriority, type Credentials, type CustomerRow, type PostedTransaction,
   type Summary, type Transaction,
 } from './api'
@@ -228,6 +228,13 @@ export default function App() {
       )}
       {tab === 'Customers' && (
         <section className="panel">
+          <h2>New customer <small>admin only</small></h2>
+          <NewCustomer credentials={credentials} onCreated={() => load(credentials)} />
+        </section>
+      )}
+
+      {tab === 'Customers' && (
+        <section className="panel">
           <h2>Customers <small>highest risk first</small></h2>
           <table>
             <thead>
@@ -270,7 +277,8 @@ export default function App() {
             {openCustomer.politicallyExposed && <span className="pep">PEP</span>}
           </div>
           <NewTransaction customer={openCustomer} credentials={credentials}
-                          onPosted={r => { setPosted(r); openCustomerTimeline(openCustomer); load(credentials) }} />
+                          onPosted={r => { setPosted(r); openCustomerTimeline(openCustomer); load(credentials) }}
+                          onAccountAdded={() => load(credentials)} />
           {posted && (
             <p className="posted">{posted.txnRef} accepted</p>
           )}
@@ -303,9 +311,9 @@ export default function App() {
   )
 }
 
-function NewTransaction({ customer, credentials, onPosted }:
+function NewTransaction({ customer, credentials, onPosted, onAccountAdded }:
   { customer: CustomerRow; credentials: Credentials;
-    onPosted: (r: PostedTransaction) => void }) {
+    onPosted: (r: PostedTransaction) => void; onAccountAdded: () => void }) {
 
   const [accountRef, setAccountRef] = useState(customer.accountRefs[0] ?? '')
   const [amount, setAmount] = useState('9500')
@@ -335,7 +343,12 @@ function NewTransaction({ customer, credentials, onPosted }:
   }
 
   if (customer.accountRefs.length === 0) {
-    return <p className="hint">This customer has no account yet, so nothing can be posted against them.</p>
+    return (
+      <>
+        <p className="hint">This customer has no account yet, so nothing can be posted against them.</p>
+        <AddAccount customer={customer} credentials={credentials} onAdded={onAccountAdded} />
+      </>
+    )
   }
 
   return (
@@ -361,7 +374,79 @@ function NewTransaction({ customer, credentials, onPosted }:
         <button onClick={post} disabled={busy || !amount}>{busy ? 'Posting…' : 'Post'}</button>
       </div>
       {error && <p className="error">{error}</p>}
+      <AddAccount customer={customer} credentials={credentials} onAdded={onAccountAdded} />
     </>
+  )
+}
+
+/** Only the flags that change an alert's score are asked for; the rest is filled server side. */
+function NewCustomer({ credentials, onCreated }:
+  { credentials: Credentials; onCreated: () => void }) {
+
+  const [first, setFirst] = useState('')
+  const [last, setLast] = useState('')
+  const [pep, setPep] = useState(false)
+  const [kycVerified, setKycVerified] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState('')
+
+  const create = async () => {
+    setBusy(true); setMessage('')
+    try {
+      const made = await createCustomer(first.trim(), last.trim(), pep, kycVerified, credentials)
+      setMessage(`${made.name} created as ${made.customerRef} with account ${made.accountRef}, `
+        + `risk ${made.riskRating}, KYC ${made.kycStatus}`)
+      setFirst(''); setLast('')
+      onCreated()
+    } catch (e) {
+      setMessage((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <>
+      <div className="sim-form">
+        <input value={first} onChange={e => setFirst(e.target.value)} placeholder="First name" />
+        <input value={last} onChange={e => setLast(e.target.value)} placeholder="Last name" />
+        <label><input type="checkbox" checked={pep} onChange={e => setPep(e.target.checked)} /> PEP</label>
+        <label><input type="checkbox" checked={kycVerified}
+                      onChange={e => setKycVerified(e.target.checked)} /> KYC verified</label>
+        <button onClick={() => void create()} disabled={busy || !first.trim() || !last.trim()}>
+          {busy ? 'Creating…' : 'Create'}
+        </button>
+      </div>
+      {message && <p className="hint">{message}</p>}
+      <p className="hint">
+        A politically exposed customer is created as HIGH risk, and unverified KYC adds a further
+        uplift, so both raise the score of every alert this customer later triggers.
+      </p>
+    </>
+  )
+}
+
+function AddAccount({ customer, credentials, onAdded }:
+  { customer: CustomerRow; credentials: Credentials; onAdded: () => void }) {
+
+  const [accountType, setAccountType] = useState('SAVINGS')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const add = async () => {
+    setBusy(true); setError('')
+    try { await addAccount(customer.customerRef, accountType, credentials); onAdded() }
+    catch (e) { setError((e as Error).message) } finally { setBusy(false) }
+  }
+
+  return (
+    <div className="sim-form add-account">
+      <select value={accountType} onChange={e => setAccountType(e.target.value)}>
+        {['SAVINGS', 'CURRENT', 'NRE', 'FIXED_DEPOSIT'].map(t => <option key={t} value={t}>{t}</option>)}
+      </select>
+      <button onClick={() => void add()} disabled={busy}>{busy ? 'Opening…' : 'Open a new account'}</button>
+      {error && <span className="error">{error}</span>}
+    </div>
   )
 }
 
