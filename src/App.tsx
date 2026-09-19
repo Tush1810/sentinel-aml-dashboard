@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
 import {
-  createAccount, fetchAlert, fetchAlerts, fetchCustomers, fetchSummary, fetchTimeline,
-  postTransaction,
-  type Alert, type Credentials, type CustomerRow, type PostedTransaction,
+  fetchAlert, fetchAlerts, fetchCustomers, fetchSummary, fetchTimeline,
+  openCase, postTransaction,
+  type Alert, type CasePriority, type Credentials, type CustomerRow, type PostedTransaction,
   type Summary, type Transaction,
 } from './api'
-import Simulate from './Simulate'
+import Cases from './Cases'
 import './App.css'
 
-const TABS = ['Overview', 'Alerts', 'Customers', 'Simulate'] as const
+const TABS = ['Overview', 'Alerts', 'Cases', 'Customers'] as const
+const PRIORITIES: CasePriority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
 type Tab = typeof TABS[number]
 
 const SEVERITIES = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] as const
@@ -33,6 +34,26 @@ export default function App() {
   const [openCustomer, setOpenCustomer] = useState<CustomerRow | null>(null)
   const [customerTxns, setCustomerTxns] = useState<Transaction[]>([])
   const [posted, setPosted] = useState<PostedTransaction | null>(null)
+  const [caseSelection, setCaseSelection] = useState<string[]>([])
+  const [casePriority, setCasePriority] = useState<CasePriority>('HIGH')
+  const [caseMessage, setCaseMessage] = useState('')
+
+  const toggleForCase = (alertRef: string) =>
+    setCaseSelection(refs =>
+      refs.includes(alertRef) ? refs.filter(r => r !== alertRef) : [...refs, alertRef])
+
+  /** Opening a case takes its alerts into review, so the queue is reloaded afterwards. */
+  const createCase = async () => {
+    if (!credentials) return
+    try {
+      const opened = await openCase(caseSelection, casePriority, credentials)
+      setCaseMessage(`${opened.caseRef} opened over ${opened.alertRefs.length} alert(s)`)
+      setCaseSelection([])
+      setAlerts(await fetchAlerts(credentials))
+    } catch (e) {
+      setCaseMessage((e as Error).message)
+    }
+  }
 
   const load = (c: Credentials) =>
     Promise.all([fetchSummary(c), fetchAlerts(c), fetchCustomers(c)])
@@ -136,13 +157,27 @@ export default function App() {
             </button>
           )}
         </h2>
+        <div className="sim-form">
+          <span>{caseSelection.length} selected</span>
+          <select value={casePriority} onChange={e => setCasePriority(e.target.value as CasePriority)}>
+            {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+          <button disabled={caseSelection.length === 0} onClick={() => void createCase()}>
+            Open case
+          </button>
+          {caseMessage && <span className="hint">{caseMessage}</span>}
+        </div>
         <table>
           <thead>
-            <tr><th>Score</th><th>Severity</th><th>Rule</th><th>Customer</th><th>Account</th><th>Evidence</th><th>Detected</th></tr>
+            <tr><th></th><th>Score</th><th>Severity</th><th>Rule</th><th>Customer</th><th>Account</th><th>Evidence</th><th>Detected</th></tr>
           </thead>
           <tbody>
             {visible.map(alert => (
               <tr key={alert.alertRef} onClick={() => openAlert(alert)} className={selected?.alertRef === alert.alertRef ? 'active' : ''}>
+                <td onClick={e => e.stopPropagation()}>
+                  <input type="checkbox" checked={caseSelection.includes(alert.alertRef)}
+                         onChange={() => toggleForCase(alert.alertRef)} />
+                </td>
                 <td><span className={`score ${alert.severity.toLowerCase()}`}>{alert.riskScore}</span></td>
                 <td>{alert.severity}</td>
                 <td>{alert.typology}</td>
@@ -154,9 +189,11 @@ export default function App() {
             ))}
           </tbody>
         </table>
-        {visible.length === 0 && <p className="empty">{customerFilter ? 'No alerts for this customer.' : 'No alerts yet. Use the Simulate tab to trigger detection.'}</p>}
+        {visible.length === 0 && <p className="empty">{customerFilter ? 'No alerts for this customer.' : 'No alerts yet. Ingest transactions and the engine will evaluate them.'}</p>}
       </section>
       )}
+
+      {tab === 'Cases' && credentials && <Cases credentials={credentials} />}
 
       {tab === 'Alerts' && selected && (
         <section className="panel detail">
@@ -233,13 +270,7 @@ export default function App() {
             {openCustomer.politicallyExposed && <span className="pep">PEP</span>}
           </div>
           <NewTransaction customer={openCustomer} credentials={credentials}
-                          onPosted={r => { setPosted(r); openCustomerTimeline(openCustomer); load(credentials) }}
-                          onAccountAdded={async () => {
-                            const fresh = await fetchCustomers(credentials)
-                            setCustomers(fresh)
-                            const updated = fresh.find(c => c.customerRef === openCustomer.customerRef)
-                            if (updated) setOpenCustomer(updated)
-                          }} />
+                          onPosted={r => { setPosted(r); openCustomerTimeline(openCustomer); load(credentials) }} />
           {posted && (
             <p className="posted">{posted.txnRef} accepted</p>
           )}
@@ -268,17 +299,13 @@ export default function App() {
           )}
         </section>
       )}
-
-      {tab === 'Simulate' && (
-        <Simulate credentials={credentials} onChanged={() => load(credentials)} />
-      )}
     </div>
   )
 }
 
-function NewTransaction({ customer, credentials, onPosted, onAccountAdded }:
+function NewTransaction({ customer, credentials, onPosted }:
   { customer: CustomerRow; credentials: Credentials;
-    onPosted: (r: PostedTransaction) => void; onAccountAdded: () => void }) {
+    onPosted: (r: PostedTransaction) => void }) {
 
   const [accountRef, setAccountRef] = useState(customer.accountRefs[0] ?? '')
   const [amount, setAmount] = useState('9500')
@@ -308,12 +335,7 @@ function NewTransaction({ customer, credentials, onPosted, onAccountAdded }:
   }
 
   if (customer.accountRefs.length === 0) {
-    return (
-      <>
-        <p className="hint">This customer has no account yet, so nothing can be posted against them.</p>
-        <AddAccount customer={customer} credentials={credentials} onAdded={onAccountAdded} />
-      </>
-    )
+    return <p className="hint">This customer has no account yet, so nothing can be posted against them.</p>
   }
 
   return (
@@ -339,32 +361,7 @@ function NewTransaction({ customer, credentials, onPosted, onAccountAdded }:
         <button onClick={post} disabled={busy || !amount}>{busy ? 'Posting…' : 'Post'}</button>
       </div>
       {error && <p className="error">{error}</p>}
-      <AddAccount customer={customer} credentials={credentials} onAdded={onAccountAdded} />
     </>
-  )
-}
-
-function AddAccount({ customer, credentials, onAdded }:
-  { customer: CustomerRow; credentials: Credentials; onAdded: () => void }) {
-
-  const [accountType, setAccountType] = useState('SAVINGS')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-
-  const add = async () => {
-    setBusy(true); setError('')
-    try { await createAccount(customer.customerRef, accountType, credentials); onAdded() }
-    catch (e) { setError((e as Error).message) } finally { setBusy(false) }
-  }
-
-  return (
-    <div className="sim-form add-account">
-      <select value={accountType} onChange={e => setAccountType(e.target.value)}>
-        {['SAVINGS', 'CURRENT', 'NRE', 'FIXED_DEPOSIT'].map(t => <option key={t} value={t}>{t}</option>)}
-      </select>
-      <button onClick={add} disabled={busy}>{busy ? 'Opening…' : 'Open a new account'}</button>
-      {error && <span className="error">{error}</span>}
-    </div>
   )
 }
 

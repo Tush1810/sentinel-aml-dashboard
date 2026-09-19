@@ -10,8 +10,8 @@ If the player does not load, [open the recording](docs/sentinel-demo.mp4) direct
 
 The dashboard is the analyst-facing screen for Sentinel. It reads the REST API of
 `sentinel-aml-service` and shows four things: headline counts, the alert queue ordered by risk
-score, a customer's transaction timeline, and a scenario runner that posts a sequence of
-transactions against one account.
+score, the case workflow an analyst uses to decide on those alerts, and a customer's
+transaction timeline.
 
 It is a React single-page app built with Vite and TypeScript. It holds no state of its own
 beyond the signed-in credentials, and it never talks to the database or to Kafka.
@@ -37,7 +37,7 @@ about what it triggered.
 |---|---|
 | `src/api.ts` | Every call to the service, and the response types they return. |
 | `src/App.tsx` | The summary tiles, the alert queue, the customer list, and the timeline. |
-| `src/Simulate.tsx` | The scenario runner and the customer and account creation forms. |
+| `src/Cases.tsx` | The case list, the assign and dispose controls, and the audit trail. |
 | `src/App.css` | All styling. There is no component library. |
 | `vite.config.ts` | The dev-server proxy that forwards `/api` to the service. |
 
@@ -69,7 +69,25 @@ To lint the source with oxlint, run:
 
     npm run lint
 
-## 6. Signing in
+## 6. The case workflow
+
+An alert is the engine saying a rule fired. A case is an analyst saying what they decided about
+it. The Cases tab covers the whole lifecycle.
+
+1. In the Alerts tab, tick one or more alerts, choose a priority, and select **Open case**. The
+   alerts move to `IN_REVIEW`.
+2. In the Cases tab, select the case and assign it to someone. The case moves to `IN_REVIEW`.
+3. Choose a disposition and give a reason, then select **Dispose**. `FALSE_POSITIVE` and
+   `CLEARED` close the case. `ESCALATED_TO_SAR` marks it for a Suspicious Activity Report.
+
+Two rules the service enforces, which the UI surfaces as errors. A case covers exactly one
+customer, so alerts spanning several customers are rejected. A disposed case cannot be decided
+again, because that would overwrite the analyst on record.
+
+Every transition is written to `audit_log` and shown in the case detail. A database trigger
+rejects any update or delete on that table, so the trail cannot be edited after the fact.
+
+## 7. Signing in
 
 The service uses HTTP Basic auth with two accounts, `analyst` and `admin`. The dashboard asks
 for those credentials and sends them on every request.
@@ -78,9 +96,11 @@ The two roles see different data. `AlertView` masks customer names on the server
 sees `Ravi M.` and an admin sees `Ravi Menon` on the same alert. Masking happens in the service,
 not here, so hiding a name in the browser is not what protects it.
 
-## 7. Known limitations
+## 8. Known limitations
 
 - Credentials are held in component state. A page reload asks for them again.
+- There is no way to create customers or accounts from the UI. Load them with the CSV
+  ingestion endpoints on `sentinel-aml-service`.
 - The alert queue fetches up to 100 alerts in one call and does not paginate.
 - Nothing polls. To see alerts the engine raised after you loaded the page, reload it.
 - There are no tests. `npm run build` type-checks the whole project, which is the only

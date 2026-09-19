@@ -7,7 +7,7 @@ export type Alert = {
   status: string
   customerRef: string
   customerName: string
-  accountRef: string | null
+  accountRef?: string
   explanation: string
   evidence: string[]
   detectedAt: string
@@ -70,23 +70,6 @@ export type CustomerRow = {
   highestRiskScore: number
 }
 
-export type SimAccount = {
-  customerRef: string
-  accountRef: string
-  name: string
-  politicallyExposed: boolean
-}
-
-export type Step = {
-  txnRef: string
-  direction: string
-  amount: number
-  country: string
-  txnTimestamp: string
-}
-
-export type ScenarioResult = { scenario: string; steps: Step[] }
-
 async function send<T>(path: string, credentials: Credentials, body: unknown): Promise<T> {
   const response = await fetch(path, {
     method: 'POST',
@@ -105,15 +88,6 @@ async function send<T>(path: string, credentials: Credentials, body: unknown): P
 }
 
 export const fetchCustomers = (c: Credentials) => get<CustomerRow[]>('/api/v1/dashboard/customers', c)
-export const fetchSimAccounts = (c: Credentials) => get<SimAccount[]>('/api/v1/simulation/accounts', c)
-
-export const createCustomer = (
-  firstName: string, lastName: string, politicallyExposed: boolean, c: Credentials,
-) => send<SimAccount>('/api/v1/simulation/customers', c, { firstName, lastName, politicallyExposed })
-
-export const runScenario = (accountRef: string, scenario: string, c: Credentials) =>
-  send<ScenarioResult>('/api/v1/simulation/scenario', c, { accountRef, scenario })
-
 export type PostedTransaction = {
   txnRef: string
   status: string
@@ -123,5 +97,45 @@ export const postTransaction = (
   body: Record<string, unknown>, c: Credentials,
 ) => send<PostedTransaction>('/api/v1/transactions', c, body)
 
-export const createAccount = (customerRef: string, accountType: string, c: Credentials) =>
-  send<SimAccount>('/api/v1/simulation/accounts', c, { customerRef, accountType })
+
+export type CasePriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+export type Disposition = 'FALSE_POSITIVE' | 'CLEARED' | 'ESCALATED_TO_SAR'
+
+export type CaseView = {
+  caseRef: string
+  customerRef: string
+  status: 'OPEN' | 'IN_REVIEW' | 'CLOSED' | 'ESCALATED_TO_SAR'
+  priority: CasePriority
+  assignedTo?: string
+  alertRefs: string[]
+  disposition?: Disposition
+  dispositionReason?: string
+  disposedBy?: string
+  disposedAt?: string
+  openedAt: string
+}
+
+export type AuditEntry = {
+  entityType: string
+  entityRef: string
+  fromStatus?: string
+  toStatus: string
+  actor: string
+  reason?: string
+  occurredAt: string
+}
+
+export const fetchCases = (c: Credentials) => get<CaseView[]>('/api/v1/cases?size=100', c)
+export const fetchCaseAudit = (caseRef: string, c: Credentials) =>
+  get<AuditEntry[]>(`/api/v1/cases/${caseRef}/audit`, c)
+
+export const openCase = (alertRefs: string[], priority: CasePriority, c: Credentials) =>
+  send<CaseView>('/api/v1/cases', c, { alertRefs, priority })
+
+/** The endpoint takes the assignee as a query parameter, so the body is unused. */
+export const assignCase = (caseRef: string, assignee: string, c: Credentials) =>
+  send<CaseView>(`/api/v1/cases/${caseRef}/assignment?assignee=${encodeURIComponent(assignee)}`, c, {})
+
+export const disposeCase = (
+  caseRef: string, disposition: Disposition, reason: string, c: Credentials,
+) => send<CaseView>(`/api/v1/cases/${caseRef}/disposition`, c, { disposition, reason })
