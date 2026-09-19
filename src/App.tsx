@@ -21,7 +21,7 @@ const time = (iso: string) => new Date(iso).toLocaleString('en-IN', { dateStyle:
 
 export default function App() {
   const [credentials, setCredentials] = useState<Credentials | null>(null)
-  const [form, setForm] = useState<Credentials>({ username: 'analyst', password: 'analyst' })
+  const [form, setForm] = useState<Credentials>({ username: 'admin', password: 'admin' })
   const [error, setError] = useState('')
 
   const [summary, setSummary] = useState<Summary | null>(null)
@@ -90,7 +90,10 @@ export default function App() {
         <input value={form.password} type="password" onChange={e => setForm({ ...form, password: e.target.value })} placeholder="password" />
         <button onClick={() => load(form)}>Sign in</button>
         {error && <p className="error">{error}</p>}
-        <p className="hint">analyst / analyst &nbsp;·&nbsp; admin / admin</p>
+        <p className="hint">
+          admin / admin sees unmasked names and can ingest.
+          analyst / analyst sees masked names and works cases.
+        </p>
       </div>
     )
   }

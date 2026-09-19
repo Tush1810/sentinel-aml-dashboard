@@ -17,7 +17,7 @@ export default function Cases({ credentials }: { credentials: Credentials }) {
   const [cases, setCases] = useState<CaseView[]>([])
   const [open, setOpen] = useState<CaseView | null>(null)
   const [trail, setTrail] = useState<AuditEntry[]>([])
-  const [assignee, setAssignee] = useState('analyst')
+  const [assignee, setAssignee] = useState('admin')
   const [disposition, setDisposition] = useState<Disposition>('CLEARED')
   const [reason, setReason] = useState('')
   const [error, setError] = useState('')
@@ -102,7 +102,7 @@ export default function Cases({ credentials }: { credentials: Credentials }) {
             <>
               <h3>Assign</h3>
               <div className="sim-form">
-                <input value={assignee} onChange={e => setAssignee(e.target.value)} placeholder="analyst" />
+                <input value={assignee} onChange={e => setAssignee(e.target.value)} placeholder="who should work this case" />
                 <button onClick={() => void run(() => assignCase(open.caseRef, assignee, credentials))}>
                   Assign
                 </button>
