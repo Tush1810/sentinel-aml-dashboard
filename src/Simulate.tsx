@@ -72,7 +72,6 @@ export default function Simulate({ credentials, onChanged }:
       </section>
 
       <section className="panel">
-        <h2>Run a laundering pattern</h2>
         <div className="sim-form">
           <select value={selected} onChange={e => setSelected(e.target.value)}>
             {accounts.map(a => (
