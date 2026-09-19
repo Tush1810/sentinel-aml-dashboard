@@ -19,6 +19,30 @@ const inr = (value: number) =>
 
 const time = (iso: string) => new Date(iso).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
 
+const SESSION_KEY = 'sentinel.credentials'
+
+/**
+ * Basic auth has no token to keep, so surviving a refresh means keeping the password itself.
+ * sessionStorage limits that to the tab: closing it discards them, and they never reach disk.
+ */
+function storedCredentials(): Credentials | null {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY)
+    return raw ? (JSON.parse(raw) as Credentials) : null
+  } catch {
+    return null
+  }
+}
+
+function rememberCredentials(c: Credentials | null) {
+  try {
+    if (c) sessionStorage.setItem(SESSION_KEY, JSON.stringify(c))
+    else sessionStorage.removeItem(SESSION_KEY)
+  } catch {
+    // Private browsing can refuse storage. Staying signed in is not worth failing over.
+  }
+}
+
 export default function App() {
   const [credentials, setCredentials] = useState<Credentials | null>(null)
   const [form, setForm] = useState<Credentials>({ username: 'admin', password: 'admin' })
@@ -59,8 +83,20 @@ export default function App() {
     Promise.all([fetchSummary(c), fetchAlerts(c), fetchCustomers(c)])
       .then(([s, a, cu]) => {
         setSummary(s); setAlerts(a); setCustomers(cu); setCredentials(c); setError('')
+        rememberCredentials(c)
       })
-      .catch((e: Error) => setError(e.message))
+      .catch((e: Error) => {
+        setError(e.message)
+        rememberCredentials(null)
+      })
+
+  /** Sign back in from the stored credentials, so a refresh does not drop the session. */
+  useEffect(() => {
+    const stored = storedCredentials()
+    if (stored) { setForm(stored); void load(stored) }
+    // Runs once on mount; load is stable enough for this and re-running would loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => { if (credentials) { const id = setInterval(() => load(credentials), 15000); return () => clearInterval(id) } }, [credentials])
 
@@ -106,7 +142,7 @@ export default function App() {
     <div className="app">
       <header>
         <h1>Sentinel <span>AML</span></h1>
-        <div className="who">{credentials.username}<button onClick={() => { setCredentials(null); setSelected(null) }}>sign out</button></div>
+        <div className="who">{credentials.username}<button onClick={() => { setCredentials(null); setSelected(null); rememberCredentials(null) }}>sign out</button></div>
       </header>
 
       <nav className="tabs">

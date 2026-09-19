@@ -98,7 +98,9 @@ not here, so hiding a name in the browser is not what protects it.
 
 ## 8. Known limitations
 
-- Credentials are held in component state. A page reload asks for them again.
+- Credentials are kept in `sessionStorage` so a refresh does not sign you out. Basic auth has
+  no token, so what is stored is the password itself. Closing the tab discards it, and nothing
+  is written to disk, but any script running on the page can read it.
 - Creating a customer or an account needs the `admin` account. As `analyst` those controls
   return 403. Bulk loading through the CSV ingestion endpoints stays the real path.
 - The alert queue fetches up to 100 alerts in one call and does not paginate.
